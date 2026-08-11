@@ -2,8 +2,10 @@ name: Data Drift Detection
 
 on:
   schedule:
+    # Run daily at 6:00 AM UTC (11:00 AM Pakistan Time)
     - cron: '0 6 * * *'
   workflow_dispatch:
+    # Allow manual trigger
     inputs:
       source:
         description: 'Data source type'
@@ -47,19 +49,28 @@ jobs:
           python data_generator.py
           
       - name: Set Environment Variables
-        env:
-          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          echo "EMAIL_SENDER=$EMAIL_SENDER" >> .env
-          echo "EMAIL_PASSWORD=$EMAIL_PASSWORD" >> .env
-          echo "EMAIL_RECIPIENTS=$EMAIL_RECIPIENTS" >> .env
-          echo "SLACK_WEBHOOK_URL=$SLACK_WEBHOOK_URL" >> .env
+          echo "ENABLE_EMAIL_ALERTS=true" >> .env
+          echo "ENABLE_SLACK_ALERTS=false" >> .env
+          echo "EMAIL_SENDER=${{ secrets.EMAIL_SENDER }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+          echo "EMAIL_RECIPIENTS=${{ secrets.EMAIL_RECIPIENTS }}" >> .env
+          echo "SLACK_WEBHOOK_URL=" >> .env
+          echo "PSI_THRESHOLD=0.2" >> .env
+          echo "KS_THRESHOLD=0.05" >> .env
+          echo "DRIFT_PERCENTAGE_THRESHOLD=0.3" >> .env
+          echo "NUMERICAL_FEATURES=[\"age\",\"income\",\"transaction_amount\",\"credit_score\"]" >> .env
+          echo "CATEGORICAL_FEATURES=[\"gender\",\"occupation\",\"location\",\"product_category\"]" >> .env
+          echo "REFERENCE_DATA_PATH=data/reference/training_data.csv" >> .env
+          echo "INCOMING_DATA_PATH=data/incoming/" >> .env
+          echo "REPORTS_PATH=reports/" >> .env
+          echo "LOGS_PATH=logs/app.log" >> .env
+          echo "LOG_LEVEL=INFO" >> .env
+          echo "TIMEZONE=UTC" >> .env
           
       - name: Run Drift Detection
         run: |
+          export PYTHONPATH="${GITHUB_WORKSPACE}"
           if [ "${{ github.event.inputs.source }}" == "api" ]; then
             python -m src.main --mode once --source api --api-url http://api.example.com/data
           else
