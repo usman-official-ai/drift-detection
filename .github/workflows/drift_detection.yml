@@ -2,10 +2,8 @@ name: Data Drift Detection
 
 on:
   schedule:
-    # Run daily at 6:00 AM UTC (11:00 AM Pakistan Time)
     - cron: '0 6 * * *'
   workflow_dispatch:
-    # Allow manual trigger
     inputs:
       source:
         description: 'Data source type'
@@ -50,11 +48,11 @@ jobs:
           
       - name: Set Environment Variables
         run: |
-          echo "ENABLE_EMAIL_ALERTS=true" >> .env
+          echo "ENABLE_EMAIL_ALERTS=false" >> .env
           echo "ENABLE_SLACK_ALERTS=false" >> .env
-          echo "EMAIL_SENDER=${{ secrets.EMAIL_SENDER }}" >> .env
-          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
-          echo "EMAIL_RECIPIENTS=${{ secrets.EMAIL_RECIPIENTS }}" >> .env
+          echo "EMAIL_SENDER=dummy@example.com" >> .env
+          echo "EMAIL_PASSWORD=dummy" >> .env
+          echo "EMAIL_RECIPIENTS=[]" >> .env
           echo "SLACK_WEBHOOK_URL=" >> .env
           echo "PSI_THRESHOLD=0.2" >> .env
           echo "KS_THRESHOLD=0.05" >> .env
@@ -71,11 +69,7 @@ jobs:
       - name: Run Drift Detection
         run: |
           export PYTHONPATH="${GITHUB_WORKSPACE}"
-          if [ "${{ github.event.inputs.source }}" == "api" ]; then
-            python -m src.main --mode once --source api --api-url http://api.example.com/data
-          else
-            python -m src.main --mode once --source file --file ${{ github.event.inputs.file_path || 'data/incoming/drift_sample.csv' }}
-          fi
+          python -m src.main --mode once --source file
           
       - name: Upload Reports
         if: always()
