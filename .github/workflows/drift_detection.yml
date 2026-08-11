@@ -2,10 +2,8 @@ name: Data Drift Detection
 
 on:
   schedule:
-    # Run daily at 6:00 AM UTC (11:00 AM Pakistan Time)
     - cron: '0 6 * * *'
   workflow_dispatch:
-    # Allow manual trigger
     inputs:
       source:
         description: 'Data source type'
@@ -27,10 +25,10 @@ jobs:
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -63,14 +61,14 @@ jobs:
       - name: Run Drift Detection
         run: |
           if [ "${{ github.event.inputs.source }}" == "api" ]; then
-            python src/main.py --mode once --source api --api-url http://api.example.com/data
+            python -m src.main --mode once --source api --api-url http://api.example.com/data
           else
-            python src/main.py --mode once --source file --file ${{ github.event.inputs.file_path || 'data/incoming/drift_sample.csv' }}
+            python -m src.main --mode once --source file --file ${{ github.event.inputs.file_path || 'data/incoming/drift_sample.csv' }}
           fi
           
       - name: Upload Reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: drift-reports-${{ github.run_id }}
           path: reports/
@@ -78,7 +76,7 @@ jobs:
           
       - name: Upload Logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: logs-${{ github.run_id }}
           path: logs/
@@ -86,7 +84,7 @@ jobs:
           
       - name: Notify on Failure
         if: failure()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const message = `🚨 Drift detection failed on ${new Date().toISOString()}`;
